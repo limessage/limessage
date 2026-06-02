@@ -20,11 +20,6 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// Инициализация Firebase
-if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
 
 // 📧 EMAILJS НАСТРОЙКИ (Оставь только этот блок с твоими реальными ключами!)
 const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";
