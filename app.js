@@ -1,5 +1,5 @@
 // ==========================================
-// 🔥 LIMESSAGE v1.0
+// 🔥 LIMESSAGE v1.0 - С АВАТАРАМИ
 // ==========================================
 
 // Firebase Config
@@ -20,24 +20,24 @@ if (typeof firebase !== 'undefined' && !firebase.apps.length) {
 }
 const db = firebase.database();
 
-// 📧 EMAILJS НАСТРОЙКИ
+// EmailJS
 const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";
 const EMAILJS_SERVICE_ID = "service_92ebgfx";
 const EMAILJS_TEMPLATE_ID = "template_7bet76h";
 
-// Инициализация EmailJS
 if (typeof emailjs !== 'undefined') {
   emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
-// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+// Глобальные переменные
 let currentUser = null;
 let currentChat = null;
 let messagesListener = null;
 let pendingRegistration = null;
 let currentVerificationCode = null;
+let selectedAvatar = null; // Выбранная аватарка
 
-// ===== DOM ЭЛЕМЕНТЫ =====
+// DOM элементы
 const authScreen = document.getElementById('auth-screen');
 const mainScreen = document.getElementById('main-screen');
 const loginForm = document.getElementById('login-form');
@@ -49,6 +49,7 @@ const messagesDiv = document.getElementById('messages');
 const msgInput = document.getElementById('msg-input');
 const currentChatSpan = document.getElementById('current-chat');
 const userInfoDiv = document.getElementById('user-info');
+const userAvatarSmall = document.getElementById('user-avatar-small');
 
 const emailModal = document.getElementById('email-modal');
 const emailDisplay = document.getElementById('email-display');
@@ -64,7 +65,31 @@ const btnAccept = document.getElementById('btn-accept');
 const btnDecline = document.getElementById('btn-decline');
 const scrollIndicator = document.getElementById('scroll-indicator');
 
-// ===== УТИЛИТЫ =====
+// ===== АВТАРКА =====
+const avatarPreview = document.getElementById('avatar-preview');
+const avatarInput = document.getElementById('avatar-input');
+const btnChangeAvatar = document.getElementById('btn-change-avatar');
+
+btnChangeAvatar.addEventListener('click', () => {
+  avatarInput.click();
+});
+
+avatarInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      selectedAvatar = event.target.result;
+      avatarPreview.textContent = '';
+      avatarPreview.style.backgroundImage = `url(${selectedAvatar})`;
+      avatarPreview.style.backgroundSize = 'cover';
+      avatarPreview.style.backgroundPosition = 'center';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// Утилиты
 function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -80,7 +105,7 @@ async function sendEmail(email, username, code) {
     console.log('✅ Email отправлен');
     return true;
   } catch (err) {
-    console.error('❌ Ошибка отправки email:', err);
+    console.error('❌ Ошибка email:', err);
     return false;
   }
 }
@@ -91,12 +116,15 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ===== ПЕРЕКЛЮЧЕНИЕ ФОРМ =====
+// Переключение форм
 document.getElementById('btn-show-register').addEventListener('click', () => {
   loginForm.style.display = 'none';
   registerForm.style.display = 'block';
   loginError.textContent = '';
   registerError.textContent = '';
+  selectedAvatar = null;
+  avatarPreview.textContent = '👤';
+  avatarPreview.style.backgroundImage = '';
 });
 
 document.getElementById('btn-show-login').addEventListener('click', () => {
@@ -106,7 +134,7 @@ document.getElementById('btn-show-login').addEventListener('click', () => {
   registerError.textContent = '';
 });
 
-// ===== ВХОД =====
+// ВХОД
 document.getElementById('btn-login').addEventListener('click', async () => {
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
@@ -152,7 +180,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   enterApp();
 });
 
-// ===== РЕГИСТРАЦИЯ =====
+// РЕГИСТРАЦИЯ - ИСПРАВЛЕНО!
 document.getElementById('btn-register').addEventListener('click', async () => {
   const username = document.getElementById('reg-username').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -161,6 +189,7 @@ document.getElementById('btn-register').addEventListener('click', async () => {
   
   registerError.textContent = '';
   
+  // Валидация
   if (!username || !email || !password || !passwordConfirm) {
     registerError.textContent = 'Заполните все поля';
     return;
@@ -186,21 +215,26 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     return;
   }
   
+  // Проверка уникальности
   const snap = await db.ref('users').orderByChild('username').equalTo(username).once('value');
   if (snap.exists()) {
     registerError.textContent = 'Имя уже занято';
     return;
   }
   
-  const snapEmail = await db.ref('users').orderByChild('email').equalTo(email).once('value');
-  if (snapEmail.exists()) {
-    registerError.textContent = 'Email уже используется';
-    return;
-  }
+  // Сохраняем данные
+  pendingRegistration = { 
+    username, 
+    email, 
+    password, 
+    avatar: selectedAvatar || null,
+    createdAt: Date.now() 
+  };
   
-  pendingRegistration = { username, email, password, createdAt: Date.now() };
+  // Генерируем код
   currentVerificationCode = generateCode();
   
+  // Сохраняем код в Firebase
   await db.ref('verification_codes/' + email).set({
     code: currentVerificationCode,
     username: username,
@@ -208,8 +242,10 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     expiresAt: Date.now() + 24 * 60 * 60 * 1000
   });
   
+  // Отправляем email
   const sent = await sendEmail(email, username, currentVerificationCode);
   
+  // Показываем окно ввода кода
   emailDisplay.textContent = email;
   emailError.textContent = '';
   emailSuccess.textContent = '';
@@ -221,11 +257,12 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     emailSuccess.textContent = '✅ Код отправлен на ' + email;
   }
   
+  // ВАЖНО: Показываем модальное окно!
   emailModal.style.display = 'flex';
   verificationCodeInput.focus();
 });
 
-// ===== ПРОВЕРКА КОДА =====
+// ПРОВЕРКА КОДА
 document.getElementById('btn-verify-email').addEventListener('click', async () => {
   const code = verificationCodeInput.value.trim();
   emailError.textContent = '';
@@ -239,14 +276,14 @@ document.getElementById('btn-verify-email').addEventListener('click', async () =
   const snap = await db.ref('verification_codes/' + pendingRegistration.email).once('value');
   
   if (!snap.exists()) {
-    emailError.textContent = 'Код не найден. Запросите новый.';
+    emailError.textContent = 'Код не найден';
     return;
   }
   
   const data = snap.val();
   
   if (Date.now() > data.expiresAt) {
-    emailError.textContent = 'Код истёк. Запросите новый.';
+    emailError.textContent = 'Код истёк';
     return;
   }
   
@@ -265,7 +302,7 @@ document.getElementById('btn-verify-email').addEventListener('click', async () =
   }, 1000);
 });
 
-// ===== ОТПРАВИТЬ КОД ПОВТОРНО =====
+// Отправить код повторно
 document.getElementById('btn-resend-code').addEventListener('click', async () => {
   if (!pendingRegistration) return;
   
@@ -289,7 +326,7 @@ document.getElementById('btn-resend-code').addEventListener('click', async () =>
   emailError.textContent = '';
 });
 
-// ===== ОТМЕНА ВЕРИФИКАЦИИ =====
+// Отмена
 document.getElementById('btn-cancel-verify').addEventListener('click', () => {
   emailModal.style.display = 'none';
   pendingRegistration = null;
@@ -297,7 +334,7 @@ document.getElementById('btn-cancel-verify').addEventListener('click', () => {
   registerError.textContent = 'Регистрация отменена';
 });
 
-// ===== ЛОГИКА ОКНА УСЛОВИЙ =====
+// Логика условий
 termsContent.addEventListener('scroll', () => {
   const scrollTop = termsContent.scrollTop;
   const scrollHeight = termsContent.scrollHeight;
@@ -322,7 +359,7 @@ function showTermsModal() {
   scrollIndicator.style.display = 'block';
 }
 
-// ===== ПРИНЯТЬ УСЛОВИЯ =====
+// Принять условия
 btnAccept.addEventListener('click', async () => {
   if (!pendingRegistration) return;
   
@@ -331,6 +368,7 @@ btnAccept.addEventListener('click', async () => {
     username: pendingRegistration.username,
     email: pendingRegistration.email,
     password: pendingRegistration.password,
+    avatar: pendingRegistration.avatar,
     verified: true,
     termsAccepted: true,
     registeredAt: Date.now(),
@@ -349,9 +387,9 @@ btnAccept.addEventListener('click', async () => {
   enterApp();
 });
 
-// ===== ОТКЛОНИТЬ УСЛОВИЯ =====
+// Отклонить условия
 btnDecline.addEventListener('click', () => {
-  if (confirm('Вы уверены? Данные регистрации будут удалены.')) {
+  if (confirm('Вы уверены?')) {
     termsModal.style.display = 'none';
     pendingRegistration = null;
     registerForm.style.display = 'none';
@@ -360,25 +398,32 @@ btnDecline.addEventListener('click', () => {
   }
 });
 
-// ===== ВХОД В ПРИЛОЖЕНИЕ =====
+// Вход в приложение
 function enterApp() {
   authScreen.style.display = 'none';
   mainScreen.style.display = 'flex';
-  userInfoDiv.textContent = '◈ ' + currentUser.username;
+  userInfoDiv.textContent = currentUser.username;
+  
+  // Показываем аватарку если есть
+  if (currentUser.avatar) {
+    userAvatarSmall.textContent = '';
+    userAvatarSmall.style.backgroundImage = `url(${currentUser.avatar})`;
+    userAvatarSmall.style.backgroundSize = 'cover';
+  }
   
   loadChats();
 }
 
-// ===== ВЫХОД =====
+// Выход
 document.getElementById('btn-logout').addEventListener('click', () => {
-  if (confirm('Выйти из аккаунта?')) {
+  if (confirm('Выйти?')) {
     localStorage.removeItem('limessage_user');
     sessionStorage.removeItem('limessage_user');
     location.reload();
   }
 });
 
-// ===== ЗАГРУЗКА ЧАТОВ =====
+// Загрузка чатов
 function loadChats() {
   db.ref('chats').on('value', (snapshot) => {
     chatList.innerHTML = '';
@@ -408,7 +453,7 @@ function loadChats() {
   });
 }
 
-// ===== ОТКРЫТИЕ ЧАТА =====
+// Открытие чата
 function openChat(chatId, chatName) {
   currentChat = chatId;
   currentChatSpan.textContent = '◈ ' + chatName;
@@ -422,7 +467,7 @@ function openChat(chatId, chatName) {
   }
 }
 
-// ===== ЗАГРУЗКА СООБЩЕНИЙ =====
+// Загрузка сообщений
 function loadMessages(chatId) {
   if (messagesListener) {
     db.ref('chats/' + currentChat + '/messages').off('child_added', messagesListener);
@@ -460,7 +505,7 @@ function renderMessage(msg, key) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// ===== ОТПРАВКА СООБЩЕНИЯ =====
+// Отправка сообщения
 document.getElementById('btn-send').addEventListener('click', sendMessage);
 msgInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') sendMessage();
@@ -484,7 +529,7 @@ function sendMessage() {
   msgInput.value = '';
 }
 
-// ===== ПРОВЕРКА СЕССИИ =====
+// Проверка сессии
 function checkSession() {
   const saved = localStorage.getItem('limessage_user') || 
                 sessionStorage.getItem('limessage_user');
@@ -507,7 +552,7 @@ function checkSession() {
   }
 }
 
-// ===== ENTER В ФОРМАХ =====
+// Enter в формах
 document.getElementById('login-password').addEventListener('keypress', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-login').click();
 });
@@ -521,5 +566,5 @@ verificationCodeInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-verify-email').click();
 });
 
-// ===== ЗАПУСК =====
+// Запуск
 checkSession();
