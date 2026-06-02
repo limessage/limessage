@@ -3,15 +3,38 @@
 // ==========================================
 
 // 🔥 FIREBASE CONFIG - ЗАМЕНИ НА СВОЙ!
+// ==========================================
+// 🔥 LIMESSAGE v1.0 - FIREBASE CONFIG
+// ==========================================
+
 const firebaseConfig = {
-  apiKey: "service_j6yvvkv",
-  authDomain: "ТВОЙ.firebaseapp.com",
-  databaseURL: "https://ТВОЙ-default-rtdb.firebaseio.com",
-  projectId: "ТВОЙ",
-  storageBucket: "ТВОЙ.appspot.com",
-  messagingSenderId: "ТВОЙ_ID",
-  appId: "ТВОЙ_APP_ID"
+  apiKey: "AIzaSyCFmZpqERRNvODqh3v-H9RJvf5F1Ln29s0",
+  authDomain: "limessage-666.firebaseapp.com",
+  databaseURL: "https://limessage-666-default-rtdb.firebaseio.com",
+  projectId: "limessage-666",
+  storageBucket: "limessage-666.firebasestorage.app",
+  messagingSenderId: "775134945024",
+  appId: "1:775134945024:web:31d108d5c02c8749391de5",
+  measurementId: "G-VYFVMFYPKK"
 };
+
+// Инициализация Firebase (Compat режим для CDN)
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// 📧 EMAILJS НАСТРОЙКИ (Вставь сюда свои ключи из EmailJS!)
+const EMAILJS_PUBLIC_KEY = "ТВОЙ_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "ТВОЙ_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "ТВОЙ_TEMPLATE_ID";
+
+// Инициализация EmailJS
+if (typeof emailjs !== 'undefined') {
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+}
+
+// ==========================================
+// ДАЛЬШЕ ИДЁТ ВЕСЬ ОСТАЛЬНОЙ КОД app.js...
+// (НЕ УДАЛЯЙ ЕГО, просто вставь этот блок в самое начало)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
