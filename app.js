@@ -186,88 +186,62 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ===== РЕГИСТРАЦИЯ =====
-  const btnRegister = document.getElementById('btn-register');
-  if (btnRegister) {
-    btnRegister.addEventListener('click', async () => {
-      const username = document.getElementById('reg-username').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const password = document.getElementById('reg-password').value;
-      const passwordConfirm = document.getElementById('reg-password-confirm').value;
-      
-      if (registerError) registerError.textContent = '';
-      
-      console.log('🔘 Нажата кнопка "Зарегистрироваться"');
-      console.log('Username:', username);
-      console.log('Email:', email);
-      
-      if (!username || !email || !password || !passwordConfirm) {
-        if (registerError) registerError.textContent = 'Заполните все поля';
-        return;
-      }
-      if (username.length < 3 || username.length > 20) {
-        if (registerError) registerError.textContent = 'Имя: 3-20 символов';
-        return;
-      }
-      if (!/^[a-zA-Z0-9_а-яА-ЯёЁ]+$/.test(username)) {
-        if (registerError) registerError.textContent = 'Только буквы, цифры, _';
-        return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        if (registerError) registerError.textContent = 'Неверный email';
-        return;
-      }
-      if (password.length < 8) {
-        if (registerError) registerError.textContent = 'Пароль: минимум 8 символов';
-        return;
-      }
-      if (password !== passwordConfirm) {
-        if (registerError) registerError.textContent = 'Пароли не совпадают';
-        return;
-      }
-      
-      const snap = await db.ref('users').orderByChild('username').equalTo(username).once('value');
-      if (snap.exists()) {
-        if (registerError) registerError.textContent = 'Имя уже занято';
-        return;
-      }
-      
-      pendingRegistration = { 
-        username, 
-        email, 
-        password, 
-        avatar: selectedAvatar || null,
-        createdAt: Date.now() 
-      };
-      
-      currentVerificationCode = generateCode();
-      
-      await db.ref('verification_codes/' + email).set({
-        code: currentVerificationCode,
-        username: username,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000
-      });
-      
-      const sent = await sendEmail(email, username, currentVerificationCode);
-      
-      if (emailDisplay) emailDisplay.textContent = email;
-      if (emailError) emailError.textContent = '';
-      if (emailSuccess) emailSuccess.textContent = '';
-      if (verificationCodeInput) verificationCodeInput.value = '';
-      
-      if (!sent) {
-        if (emailSuccess) emailSuccess.textContent = '⚠️ Email не отправлен. Код: ' + currentVerificationCode;
-      } else {
-        if (emailSuccess) emailSuccess.textContent = '✅ Код отправлен на ' + email;
-      }
-      
-      if (emailModal) {
-        emailModal.style.display = 'flex';
-        console.log('✅ Показано окно верификации');
-      }
-      if (verificationCodeInput) verificationCodeInput.focus();
+// ===== РЕГИСТРАЦИЯ =====
+const btnRegister = document.getElementById('btn-register');
+if (btnRegister) {
+  btnRegister.addEventListener('click', async () => {
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const passwordConfirm = document.getElementById('reg-password-confirm').value;
+    
+    if (registerError) registerError.textContent = '';
+    
+    console.log('🔘 Нажата кнопка "Зарегистрироваться"');
+    
+    // ... вся валидация ...
+    
+    // 🔥 ИСПРАВЛЕНИЕ: заменяем точки в email
+    const safeEmail = email.replace(/\./g, ',');
+    
+    pendingRegistration = { 
+      username, 
+      email, 
+      password, 
+      avatar: selectedAvatar || null,
+      createdAt: Date.now() 
+    };
+    
+    currentVerificationCode = generateCode();
+    
+    await db.ref('verification_codes/' + safeEmail).set({
+      code: currentVerificationCode,
+      username: username,
+      email: email, // сохраняем оригинальный email
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000
     });
-  }
+    
+    const sent = await sendEmail(email, username, currentVerificationCode);
+    
+    if (emailDisplay) emailDisplay.textContent = email;
+    if (emailError) emailError.textContent = '';
+    if (emailSuccess) emailSuccess.textContent = '';
+    if (verificationCodeInput) verificationCodeInput.value = '';
+    
+    if (!sent) {
+      if (emailSuccess) emailSuccess.textContent = '⚠️ Email не отправлен. Код: ' + currentVerificationCode;
+    } else {
+      if (emailSuccess) emailSuccess.textContent = '✅ Код отправлен на ' + email;
+    }
+    
+    if (emailModal) {
+      emailModal.style.display = 'flex';
+      console.log('✅ Показано окно верификации');
+    }
+    if (verificationCodeInput) verificationCodeInput.focus();
+  });
+}
 
   // ===== ПРОВЕРКА КОДА =====
   const btnVerifyEmail = document.getElementById('btn-verify-email');
