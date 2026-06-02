@@ -1,12 +1,8 @@
 // ==========================================
-//  LIMESSAGE v1.0 - С EMAIL ВЕРИФИКАЦИЕЙ
+// 🔥 LIMESSAGE v1.0
 // ==========================================
 
-// 🔥 FIREBASE CONFIG - ЗАМЕНИ НА СВОЙ!
-// ==========================================
-// 🔥 LIMESSAGE v1.0 - FIREBASE CONFIG
-// ==========================================
-
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCFmZpqERRNvODqh3v-H9RJvf5F1Ln29s0",
   authDomain: "limessage-666.firebaseapp.com",
@@ -18,26 +14,27 @@ const firebaseConfig = {
   measurementId: "G-VYFVMFYPKK"
 };
 
-// Инициализация Firebase (Compat режим для CDN)
-firebase.initializeApp(firebaseConfig);
+// Инициализация Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.database();
 
-// 📧 EMAILJS НАСТРОЙКИ (Вставь сюда свои ключи из EmailJS!)
+// EmailJS
 const EMAILJS_PUBLIC_KEY = "ТВОЙ_PUBLIC_KEY";
 const EMAILJS_SERVICE_ID = "ТВОЙ_SERVICE_ID";
 const EMAILJS_TEMPLATE_ID = "ТВОЙ_TEMPLATE_ID";
 
-// Инициализация EmailJS
 if (typeof emailjs !== 'undefined') {
   emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
-// ==========================================
-// ДАЛЬШЕ ИДЁТ ВЕСЬ ОСТАЛЬНОЙ КОД app.js...
-// (НЕ УДАЛЯЙ ЕГО, просто вставь этот блок в самое начало)
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
+// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+let currentUser = null;
+let currentChat = null;
+let messagesListener = null;
+let pendingRegistration = null;
+let currentVerificationCode = null;
 // 📧 EMAILJS - ЗАМЕНИ НА СВОЙ!
 // Регистрация: https://www.emailjs.com (бесплатно 200 писем/мес)
 const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";
