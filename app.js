@@ -15,9 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const db = firebase.database();
 
   // ⚠️ ВСТАВЬ СВОИ ДАННЫЕ EMAILJS СЮДА:
-  const EMAILJS_PUBLIC_KEY = "user_xxxxx";        // ← ТВОЙ PUBLIC KEY
-  const EMAILJS_SERVICE_ID = "service_xxxxx";     // ← ТВОЙ SERVICE ID  
-  const EMAILJS_TEMPLATE_ID = "template_xxxxx";   // ← ТВОЙ TEMPLATE ID
+  const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";        // ← ТВОЙ PUBLIC KEY
+  const EMAILJS_SERVICE_ID = "service_j6yvvkv";     // ← ТВОЙ SERVICE ID  
+  const EMAILJS_TEMPLATE_ID = "template_7bet76h";   // ← ТВОЙ TEMPLATE ID
 
   emailjs.init(EMAILJS_PUBLIC_KEY);
 
