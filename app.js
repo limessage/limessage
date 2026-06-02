@@ -15,13 +15,12 @@ const firebaseConfig = {
 };
 
 // Инициализация Firebase
-if (!firebase.apps.length) {
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
 
-
-// 📧 EMAILJS НАСТРОЙКИ (Оставь только этот блок с твоими реальными ключами!)
+// 📧 EMAILJS НАСТРОЙКИ
 const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";
 const EMAILJS_SERVICE_ID = "service_92ebgfx";
 const EMAILJS_TEMPLATE_ID = "template_7bet76h";
@@ -38,17 +37,7 @@ let messagesListener = null;
 let pendingRegistration = null;
 let currentVerificationCode = null;
 
-// Инициализация EmailJS
-emailjs.init(EMAILJS_PUBLIC_KEY);
-
-// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-let currentUser = null;
-let currentChat = null;
-let messagesListener = null;
-let pendingRegistration = null;
-let currentVerificationCode = null;
-
-// ===== DOM =====
+// ===== DOM ЭЛЕМЕНТЫ =====
 const authScreen = document.getElementById('auth-screen');
 const mainScreen = document.getElementById('main-screen');
 const loginForm = document.getElementById('login-form');
@@ -172,7 +161,6 @@ document.getElementById('btn-register').addEventListener('click', async () => {
   
   registerError.textContent = '';
   
-  // Валидация
   if (!username || !email || !password || !passwordConfirm) {
     registerError.textContent = 'Заполните все поля';
     return;
@@ -198,7 +186,6 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     return;
   }
   
-  // Проверяем уникальность
   const snap = await db.ref('users').orderByChild('username').equalTo(username).once('value');
   if (snap.exists()) {
     registerError.textContent = 'Имя уже занято';
@@ -211,31 +198,25 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     return;
   }
   
-  // Сохраняем данные
   pendingRegistration = { username, email, password, createdAt: Date.now() };
-  
-  // Генерируем код
   currentVerificationCode = generateCode();
   
-  // Сохраняем код в Firebase (для проверки)
   await db.ref('verification_codes/' + email).set({
     code: currentVerificationCode,
     username: username,
     createdAt: Date.now(),
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 часа
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000
   });
   
-  // Отправляем email
   const sent = await sendEmail(email, username, currentVerificationCode);
   
-  // Показываем окно ввода кода
   emailDisplay.textContent = email;
   emailError.textContent = '';
   emailSuccess.textContent = '';
   verificationCodeInput.value = '';
   
   if (!sent) {
-    emailSuccess.textContent = '⚠️ Email не отправлен. Код для тестирования: ' + currentVerificationCode;
+    emailSuccess.textContent = '⚠️ Email не отправлен. Код: ' + currentVerificationCode;
   } else {
     emailSuccess.textContent = '✅ Код отправлен на ' + email;
   }
@@ -255,7 +236,6 @@ document.getElementById('btn-verify-email').addEventListener('click', async () =
     return;
   }
   
-  // Получаем код из базы
   const snap = await db.ref('verification_codes/' + pendingRegistration.email).once('value');
   
   if (!snap.exists()) {
@@ -265,25 +245,20 @@ document.getElementById('btn-verify-email').addEventListener('click', async () =
   
   const data = snap.val();
   
-  // Проверяем срок
   if (Date.now() > data.expiresAt) {
     emailError.textContent = 'Код истёк. Запросите новый.';
     return;
   }
   
-  // Проверяем код
   if (data.code !== code) {
     emailError.textContent = 'Неверный код';
     return;
   }
   
-  // ✅ КОД ВЕРНЫЙ!
   emailSuccess.textContent = '✅ Код подтверждён!';
   
-  // Удаляем код из базы
   await db.ref('verification_codes/' + pendingRegistration.email).remove();
   
-  // Показываем окно условий через секунду
   setTimeout(() => {
     emailModal.style.display = 'none';
     showTermsModal();
@@ -351,7 +326,6 @@ function showTermsModal() {
 btnAccept.addEventListener('click', async () => {
   if (!pendingRegistration) return;
   
-  // Создаём пользователя в базе
   const userRef = db.ref('users').push();
   await userRef.set({
     username: pendingRegistration.username,
@@ -363,10 +337,8 @@ btnAccept.addEventListener('click', async () => {
     lastSeen: Date.now()
   });
   
-  // Создаём общий чат
   await db.ref('chats/general/participants/' + userRef.key).set(true);
   
-  // Автоматический вход
   currentUser = { uid: userRef.key, ...pendingRegistration };
   localStorage.setItem('limessage_user', JSON.stringify(currentUser));
   
@@ -412,7 +384,6 @@ function loadChats() {
     chatList.innerHTML = '';
     
     if (!snapshot.exists()) {
-      // Создаём общий чат
       db.ref('chats/general').set({
         name: 'Общий чат',
         createdAt: Date.now(),
