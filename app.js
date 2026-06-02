@@ -20,11 +20,18 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// EmailJS
-const EMAILJS_PUBLIC_KEY = "ТВОЙ_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID = "ТВОЙ_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = "ТВОЙ_TEMPLATE_ID";
+// Инициализация Firebase
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
 
+// 📧 EMAILJS НАСТРОЙКИ (Оставь только этот блок с твоими реальными ключами!)
+const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";
+const EMAILJS_SERVICE_ID = "service_92ebgfx";
+const EMAILJS_TEMPLATE_ID = "template_7bet76h";
+
+// Инициализация EmailJS
 if (typeof emailjs !== 'undefined') {
   emailjs.init(EMAILJS_PUBLIC_KEY);
 }
@@ -35,11 +42,6 @@ let currentChat = null;
 let messagesListener = null;
 let pendingRegistration = null;
 let currentVerificationCode = null;
-// 📧 EMAILJS - ЗАМЕНИ НА СВОЙ!
-// Регистрация: https://www.emailjs.com (бесплатно 200 писем/мес)
-const EMAILJS_PUBLIC_KEY = "EHEtdA5nbc5lb7sRm";
-const EMAILJS_SERVICE_ID = "service_92ebgfx";
-const EMAILJS_TEMPLATE_ID = "template_7bet76h";
 
 // Инициализация EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
